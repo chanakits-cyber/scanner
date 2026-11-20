@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#1d4ed8">
+<title>สแกนบาร์โค้ดสินค้า</title>
+<link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/@zxing/browser@0.1.5/umd/index.min.js"></script>
+<style>
+*{box-sizing:border-box}
+body{margin:0;padding:16px;background:#f3f6fb;color:#172033;font-family:'Kanit',sans-serif}
+main{max-width:520px;margin:0 auto;background:#fff;border:1px solid #e3e9f2;border-radius:16px;padding:18px;box-shadow:0 4px 18px #17203310}
+h2{margin:0 0 6px;color:#163b70;font-size:20px}
+p{font-size:13px;color:#64748b;margin:0 0 12px}
+video{width:100%;max-height:58vh;object-fit:cover;background:#0b1220;border-radius:12px}
+.field{margin-top:12px}
+label{display:block;font-size:13px;margin-bottom:5px;color:#475569}
+select,input{width:100%;min-height:43px;padding:9px 11px;border:1px solid #cbd5e1;border-radius:9px;font:inherit;background:#fff}
+button{border:0;border-radius:9px;padding:10px 14px;font:inherit;cursor:pointer}
+.primary{background:#1d4ed8;color:white}.secondary{background:#eaf0fb;color:#163b70}
+.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}.actions button{flex:1}
+#status{min-height:40px;padding:10px 0;color:#475569;font-size:13px}
+.note{font-size:12px;color:#64748b;margin-top:12px}
+</style>
+</head>
+<body>
+<main>
+ <h2>📷 สแกนบาร์โค้ดสินค้า</h2>
+ <p>อนุญาตการใช้กล้องเมื่อเบราว์เซอร์แจ้งเตือน และวางบาร์โค้ดให้อยู่กลางภาพ</p>
+ <video id="video" autoplay muted playsinline></video>
+ <div id="status">กำลังเตรียมกล้อง...</div>
+ <div class="field"><label for="camera">เลือกกล้อง</label><select id="camera"><option value="">กำลังค้นหากล้อง...</option></select></div>
+ <div class="actions">
+  <button class="primary" id="start">เริ่ม / เปิดกล้องใหม่</button>
+  <button class="secondary" id="close">ปิดหน้าสแกน</button>
+ </div>
+ <div class="field"><label for="manual">หรือกรอกบาร์โค้ดเอง</label><input id="manual" autocomplete="off" placeholder="กรอก Barcode"></div>
+ <div class="actions"><button class="primary" id="send">ส่ง Barcode กลับระบบ</button></div>
+ <div class="note">กล้องทำงานในหน้านี้โดยตรง ภาพจากกล้องไม่ถูกอัปโหลดหรือบันทึก</div>
+</main>
+<script>
+'use strict';
+const $ = id => document.getElementById(id);
+const statusEl = $('status');
+let reader = null;
+let controls = null;
+let selectedDeviceId = '';
+let locked = false;
+const params = new URLSearchParams(location.search);
+const returnOrigin = params.get('returnOrigin') || '';
+
+function setStatus(s){ statusEl.textContent = s; }
+function validReturnOrigin(){
+  try{
+    const u = new URL(returnOrigin);
+    return u.protocol === 'https:' &&
+      (u.hostname === 'script.google.com' ||
+       u.hostname.endsWith('.script.googleusercontent.com') ||
+       u.hostname === 'script.googleusercontent.com');
+  }catch(e){ return false; }
+}
+function sendBarcode(value){
+  const barcode = String(value || '').trim();
+  if(!barcode){ setStatus('ไม่พบบาร์โค้ด กรุณาลองใหม่'); return; }
+  if(!window.opener || window.opener.closed){ setStatus('ไม่พบหน้าระบบเดิม กรุณาเปิดหน้าสแกนจากระบบนับสต๊อกอีกครั้ง'); return; }
+  if(!validReturnOrigin()){ setStatus('ไม่สามารถส่งกลับได้: ที่อยู่หน้าระบบไม่ถูกต้อง'); return; }
+  window.opener.postMessage({type:'STOCK_BARCODE', barcode}, returnOrigin);
+  setStatus('ส่ง Barcode กลับระบบแล้ว');
+  stopCamera();
+  setTimeout(()=>window.close(),350);
+}
+async function stopCamera(){
+  if(controls){try{controls.stop();}catch(e){}controls=null;}
+  if(reader){try{reader.reset();}catch(e){}reader=null;}
+  const v=$('video');
+  if(v.srcObject){v.srcObject.getTracks().forEach(t=>t.stop());v.srcObject=null;}
+}
+async function startCamera(){
+  await stopCamera();
+  if(!window.ZXingBrowser || !ZXingBrowser.BrowserMultiFormatReader){
+    setStatus('โหลดระบบอ่านบาร์โค้ดไม่สำเร็จ กรุณาตรวจสอบอินเทอร์เน็ตแล้วลองใหม่');return;
+  }
+  if(!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia){
+    setStatus('เบราว์เซอร์ไม่รองรับกล้อง หรือไม่ได้เปิดผ่าน HTTPS');return;
+  }
+  try{
+    setStatus('กำลังขออนุญาตใช้กล้อง...');
+    const permission = await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'environment'}},audio:false});
+    permission.getTracks().forEach(t=>t.stop());
+    const devices = await ZXingBrowser.BrowserCodeReader.listVideoInputDevices();
+    const sel=$('camera');sel.innerHTML='';
+    devices.forEach((d,i)=>{
+      const o=document.createElement('option');o.value=d.deviceId;o.textContent=d.label||`กล้อง ${i+1}`;sel.appendChild(o);
+    });
+    if(!devices.length) throw new Error('ไม่พบกล้องในอุปกรณ์');
+    const chosen=devices.find(d=>d.deviceId===selectedDeviceId) ||
+      devices.find(d=>/back|rear|environment|หลัง/i.test(d.label)) || devices[devices.length-1];
+    selectedDeviceId=chosen.deviceId;sel.value=selectedDeviceId;
+    reader=new ZXingBrowser.BrowserMultiFormatReader();
+    locked=false;
+    setStatus('กำลังเปิดกล้อง...');
+    controls=await reader.decodeFromVideoDevice(selectedDeviceId,$('video'),(result,err)=>{
+      if(result && !locked){
+        locked=true;
+        const value=result.getText();
+        $('manual').value=value;
+        setStatus('อ่านได้แล้ว: '+value);
+        sendBarcode(value);
+      }
+    });
+    setStatus('พร้อมสแกน — วางบาร์โค้ดในกรอบภาพ');
+  }catch(e){
+    console.error(e);
+    let message=e.message||'ไม่สามารถเปิดกล้องได้';
+    if(e.name==='NotAllowedError'||e.name==='PermissionDeniedError') message='ไม่ได้รับอนุญาตใช้กล้อง กรุณากด Allow ในการตั้งค่าเว็บไซต์นี้';
+    else if(e.name==='NotFoundError') message='ไม่พบกล้องในอุปกรณ์';
+    else if(e.name==='NotReadableError') message='กล้องกำลังถูกใช้งานโดยแอปอื่น กรุณาปิดแอปนั้นแล้วลองใหม่';
+    setStatus('เปิดกล้องไม่สำเร็จ: '+message);
+  }
+}
+$('start').addEventListener('click',startCamera);
+$('close').addEventListener('click',async()=>{await stopCamera();window.close();});
+$('send').addEventListener('click',()=>sendBarcode($('manual').value));
+$('camera').addEventListener('change',async()=>{selectedDeviceId=$('camera').value;await startCamera();});
+window.addEventListener('pagehide',stopCamera);
+if(!validReturnOrigin()) setStatus('เปิดหน้านี้ผ่านปุ่ม “เปิดกล้องสแกน” ในระบบนับสต๊อกเท่านั้น');
+else startCamera();
+</script>
+</body>
+</html>
