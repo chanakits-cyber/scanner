@@ -128,10 +128,12 @@ function loadZXing(){
   if(libraryPromise) return libraryPromise;
 
   libraryPromise = new Promise((resolve,reject)=>{
-    const urls = [
-      'https://cdn.jsdelivr.net/npm/@zxing/browser@0.1.5/umd/index.min.js',
-      'https://unpkg.com/@zxing/browser@0.1.5/umd/index.min.js'
-    ];
+
+const urls = [
+  'https://unpkg.com/@zxing/browser@0.1.5',
+  'https://cdn.jsdelivr.net/npm/@zxing/browser@0.1.5/umd/zxing-browser.min.js'
+];
+
 
     let index = 0;
 
