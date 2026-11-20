@@ -124,8 +124,10 @@ $('close').addEventListener('click',async()=>{await stopCamera();window.close();
 $('send').addEventListener('click',()=>sendBarcode($('manual').value));
 $('camera').addEventListener('change',async()=>{selectedDeviceId=$('camera').value;await startCamera();});
 window.addEventListener('pagehide',stopCamera);
-if(!validReturnOrigin()) setStatus('เปิดหน้านี้ผ่านปุ่ม “เปิดกล้องสแกน” ในระบบนับสต๊อกเท่านั้น');
-else startCamera();
+// อนุญาตให้เปิดกล้องได้แม้เข้าหน้านี้โดยตรง เพื่อทดสอบกล้องจาก URL ได้
+// แต่การส่งบาร์โค้ดกลับระบบยังคงตรวจสอบ returnOrigin และ window.opener ใน sendBarcode()
+if(!validReturnOrigin()) setStatus('โหมดทดสอบกล้อง: หากต้องการส่ง Barcode กลับระบบ ให้เปิดจากปุ่ม “เปิดกล้องสแกน” ในระบบนับสต๊อก');
+startCamera();
 </script>
 </body>
 </html>
