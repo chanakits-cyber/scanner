@@ -1,417 +1,91 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="th">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="theme-color" content="#1d4ed8">
-<title>สแกนบาร์โค้ดสินค้า</title>
-
-<link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600&display=swap" rel="stylesheet">
-
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#123b70"><title>สแกนบาร์โค้ดสินค้า</title>
 <style>
-*{box-sizing:border-box}
-body{
-  margin:0;padding:16px;background:#f3f6fb;
-  color:#172033;font-family:'Kanit',sans-serif
-}
-main{
-  max-width:520px;margin:0 auto;background:#fff;
-  border:1px solid #e3e9f2;border-radius:16px;
-  padding:18px;box-shadow:0 4px 18px #17203310
-}
-h2{margin:0 0 6px;color:#163b70;font-size:20px}
-p{font-size:13px;color:#64748b;margin:0 0 12px}
-video{
-  width:100%;max-height:58vh;object-fit:cover;
-  background:#0b1220;border-radius:12px
-}
-.field{margin-top:12px}
-label{display:block;font-size:13px;margin-bottom:5px;color:#475569}
-select,input{
-  width:100%;min-height:43px;padding:9px 11px;
-  border:1px solid #cbd5e1;border-radius:9px;
-  font:inherit;background:#fff
-}
-button{
-  border:0;border-radius:9px;padding:10px 14px;
-  font:inherit;cursor:pointer
-}
-button:disabled{opacity:.5;cursor:not-allowed}
-.primary{background:#1d4ed8;color:white}
-.secondary{background:#eaf0fb;color:#163b70}
-.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
-.actions button{flex:1}
-#status{
-  min-height:40px;padding:10px 0;
-  color:#475569;font-size:13px
-}
-.note{font-size:12px;color:#64748b;margin-top:12px}
+*{box-sizing:border-box}body{margin:0;background:#f2f5fa;color:#172033;font-family:Arial,sans-serif;padding:16px}
+main{max-width:720px;margin:0 auto;background:#fff;border:1px solid #dce4ef;border-radius:18px;padding:18px;box-shadow:0 8px 30px #102a430d}
+h1{font-size:21px;margin:0 0 6px;color:#163b70}.sub{color:#64748b;font-size:13px;margin-bottom:16px}
+#reader{width:100%;min-height:260px;overflow:hidden;border-radius:14px;background:#101827}
+#reader video{object-fit:cover}#status{padding:12px 2px;min-height:46px;font-size:14px;color:#334155;line-height:1.5}
+.actions{display:flex;gap:9px;flex-wrap:wrap}button,select{border:0;border-radius:10px;padding:12px 15px;font-size:15px}button{background:#1d4ed8;color:white}button.alt{background:#e8eef8;color:#163b70}select{background:#f1f5f9;max-width:100%;border:1px solid #cbd5e1}
+.note{font-size:12px;color:#64748b;line-height:1.6;margin-top:14px}.code{font-size:23px;font-weight:bold;letter-spacing:1px;color:#15803d;word-break:break-all}
 </style>
+<script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
 </head>
-
-<body>
-<main>
-  <h2>📷 สแกนบาร์โค้ดสินค้า</h2>
-  <p>กดปุ่มเปิดกล้อง และอนุญาตให้เว็บไซต์ใช้กล้องเมื่อมีข้อความแจ้งเตือน</p>
-
-  <video id="video" autoplay muted playsinline></video>
-
-  <div id="status">กำลังเตรียมระบบ...</div>
-
-  <div class="field">
-    <label for="camera">เลือกกล้อง</label>
-    <select id="camera">
-      <option value="">ยังไม่ได้ค้นหากล้อง</option>
-    </select>
-  </div>
-
-  <div class="actions">
-    <button class="primary" id="start">เริ่ม / เปิดกล้องใหม่</button>
-    <button class="secondary" id="close">ปิดหน้าสแกน</button>
-  </div>
-
-  <div class="field">
-    <label for="manual">หรือกรอกบาร์โค้ดเอง</label>
-    <input id="manual" autocomplete="off" placeholder="กรอก Barcode">
-  </div>
-
-  <div class="actions">
-    <button class="primary" id="send">ส่ง Barcode กลับระบบ</button>
-  </div>
-
-  <div class="note">
-    กล้องทำงานในหน้านี้โดยตรง ภาพจากกล้องไม่ถูกอัปโหลดหรือบันทึก
-  </div>
+<body><main>
+<h1>📷 สแกนบาร์โค้ดสินค้า</h1><div class="sub">STOCK COUNT · ใช้กล้องหลังหรือกล้องที่เชื่อมต่อกับอุปกรณ์</div>
+<div id="reader"></div><div id="status" role="status">กำลังเตรียมตัวอ่านบาร์โค้ด...</div>
+<div class="actions"><button id="startBtn" type="button">เริ่มกล้อง</button><button id="stopBtn" class="alt" type="button">หยุดกล้อง</button><select id="cameraSelect" aria-label="เลือกกล้อง"><option value="">เลือกกล้อง</option></select></div>
+<div class="note">อนุญาตการใช้กล้องเมื่อเบราว์เซอร์ถาม หากไม่เห็นภาพ ให้ปิดแอปอื่นที่กำลังใช้กล้องแล้วกดเริ่มกล้องอีกครั้ง</div>
 </main>
-
 <script>
 'use strict';
-
-const $ = id => document.getElementById(id);
-
-const video = $('video');
-const statusEl = $('status');
-const cameraSelect = $('camera');
-const startButton = $('start');
-
-let reader = null;
-let controls = null;
-let selectedDeviceId = '';
-let locked = false;
-let libraryPromise = null;
-let starting = false;
-
 const params = new URLSearchParams(location.search);
-const returnOrigin = params.get('returnOrigin') || '';
-
-function setStatus(message){
-  statusEl.textContent = message;
-}
-
-function validReturnOrigin(){
-  try{
-    const u = new URL(returnOrigin);
-    return u.protocol === 'https:' &&
-      (
-        u.hostname === 'script.google.com' ||
-        u.hostname.endsWith('.script.googleusercontent.com') ||
-        u.hostname === 'script.googleusercontent.com'
-      );
-  }catch(e){
-    return false;
-  }
-}
-
-// โหลด ZXing โดยมี CDN สำรอง
-function loadZXing(){
-  if(window.ZXingBrowser) return Promise.resolve(true);
-  if(libraryPromise) return libraryPromise;
-
-  libraryPromise = new Promise((resolve,reject)=>{
-
-const urls = [
-  'https://unpkg.com/@zxing/browser@0.1.5',
-  'https://cdn.jsdelivr.net/npm/@zxing/browser@0.1.5/umd/zxing-browser.min.js'
-];
-
-
-    let index = 0;
-
-    function tryLoad(){
-      if(index >= urls.length){
-        reject(new Error('โหลดระบบอ่านบาร์โค้ดจากทั้งสองแหล่งไม่สำเร็จ'));
-        return;
-      }
-
-      const script = document.createElement('script');
-      script.src = urls[index++];
-      script.async = true;
-
-      script.onload = ()=>{
-        if(window.ZXingBrowser &&
-           window.ZXingBrowser.BrowserMultiFormatReader){
-          resolve(true);
-        }else{
-          script.remove();
-          tryLoad();
-        }
-      };
-
-      script.onerror = ()=>{
-        script.remove();
-        tryLoad();
-      };
-
-      document.head.appendChild(script);
-    }
-
-    tryLoad();
+const returnUrl = params.get('returnUrl') || '';
+const statusEl = document.getElementById('status');
+const selectEl = document.getElementById('cameraSelect');
+let scanner = null, running = false, completed = false;
+const F = window.Html5QrcodeSupportedFormats || {};
+const formatsToSupport = [F.EAN_13,F.EAN_8,F.UPC_A,F.UPC_E,F.CODE_128,F.CODE_39,F.ITF,F.CODABAR].filter(x => x !== undefined);
+function status(t){ statusEl.textContent=t; }
+function validCode(s){ return /^[0-9A-Za-z\-.$/+% ]{4,40}$/.test(String(s||'').trim()); }
+function sendResult(value){
+  if(completed)return; completed=true;
+  const code=String(value).trim();
+  statusEl.innerHTML='อ่านบาร์โค้ดสำเร็จ<br><div class="code"></div><div>กำลังส่งกลับระบบนับสต๊อก...</div>';
+  statusEl.querySelector('.code').textContent=code;
+  stopCamera().finally(()=>{
+    let sent=false;
+    try { if(window.opener && !window.opener.closed){ window.opener.postMessage({type:'STOCK_COUNT_BARCODE',barcode:code}, '*'); sent=true; } } catch(e){}
+    if(sent){
+      setTimeout(()=>{ try{window.close();}catch(e){} },500);
+      setTimeout(()=>{ if(!window.closed && returnUrl){ const u=new URL(returnUrl);u.searchParams.set('barcode',code);location.replace(u.toString()); } },1300);
+    } else if(returnUrl){ const u=new URL(returnUrl);u.searchParams.set('barcode',code);location.replace(u.toString()); }
+    else { status('อ่านได้: '+code+' แต่ไม่พบ URL สำหรับส่งกลับ กรุณาคัดลอกเลขบาร์โค้ด'); }
   });
-
-  return libraryPromise;
 }
-
-async function stopCamera(){
-  if(controls){
-    try{controls.stop();}catch(e){}
-    controls = null;
-  }
-
-  if(reader){
-    try{reader.reset();}catch(e){}
-    reader = null;
-  }
-
-  if(video.srcObject){
-    video.srcObject.getTracks().forEach(track=>{
-      track.stop();
-    });
-    video.srcObject = null;
-  }
-
-  video.pause();
-}
-
-function sendBarcode(value){
-  const barcode = String(value || '').trim();
-
-  if(!barcode){
-    setStatus('ไม่พบบาร์โค้ด กรุณาลองใหม่');
-    return;
-  }
-
-  if(!window.opener || window.opener.closed){
-    setStatus('ไม่พบหน้าระบบเดิม กรุณาเปิดหน้าสแกนจากระบบนับสต๊อกอีกครั้ง');
-    return;
-  }
-
-  if(!validReturnOrigin()){
-    setStatus('ไม่สามารถส่งกลับได้: ที่อยู่หน้าระบบไม่ถูกต้อง');
-    return;
-  }
-
-  window.opener.postMessage(
-    {type:'STOCK_BARCODE',barcode:barcode},
-    returnOrigin
-  );
-
-  setStatus('ส่ง Barcode กลับระบบแล้ว');
-
-  stopCamera();
-  setTimeout(()=>window.close(),500);
-}
-
-async function loadCameraList(){
+async function listCameras(){
   try{
-    const devices =
-      await navigator.mediaDevices.enumerateDevices();
-
-    const cameras = devices.filter(
-      d=>d.kind === 'videoinput'
-    );
-
-    cameraSelect.innerHTML = '';
-
-    cameras.forEach((device,index)=>{
-      const option = document.createElement('option');
-      option.value = device.deviceId;
-      option.textContent =
-        device.label || `กล้อง ${index+1}`;
-      cameraSelect.appendChild(option);
-    });
-
-    if(selectedDeviceId){
-      cameraSelect.value = selectedDeviceId;
-    }
-
-    if(!cameras.length){
-      cameraSelect.innerHTML =
-        '<option value="">ไม่พบกล้อง</option>';
-    }
-
-    return cameras;
-  }catch(e){
-    console.error('Camera list:',e);
-    return [];
-  }
+    const cams=await Html5Qrcode.getCameras();
+    selectEl.innerHTML='';
+    cams.forEach((c,i)=>{const o=document.createElement('option');o.value=c.id;o.textContent=c.label||('กล้อง '+(i+1));selectEl.appendChild(o);});
+    const back=cams.find(c=>/back|rear|environment|หลัง/i.test(c.label||''));
+    if(back)selectEl.value=back.id;
+    if(!cams.length)status('ไม่พบกล้องในอุปกรณ์');
+  }catch(e){status('ยังเข้าถึงรายชื่อกล้องไม่ได้: '+(e.message||e));}
 }
-
 async function startCamera(){
-  if(starting) return;
-  starting = true;
-  startButton.disabled = true;
-
+  if(running || completed)return;
+  if(!window.isSecureContext){status('ต้องเปิดหน้านี้ผ่าน HTTPS เท่านั้น');return;}
+  if(typeof Html5Qrcode==='undefined'){status('โหลดตัวอ่านบาร์โค้ดไม่สำเร็จ กรุณาตรวจอินเทอร์เน็ตแล้วรีโหลดหน้า');return;}
   try{
-    await stopCamera();
-
-    locked = false;
-
-    if(!window.isSecureContext){
-      throw new Error(
-        'หน้านี้ต้องเปิดผ่าน HTTPS จึงจะใช้กล้องได้'
-      );
-    }
-
-    if(!navigator.mediaDevices ||
-       !navigator.mediaDevices.getUserMedia){
-      throw new Error(
-        'เบราว์เซอร์ไม่รองรับการเรียกใช้กล้อง'
-      );
-    }
-
-    setStatus('กำลังตรวจสอบระบบอ่านบาร์โค้ด...');
-
-    try{
-      await loadZXing();
-    }catch(e){
-      throw new Error(
-        'โหลดระบบอ่านบาร์โค้ดไม่สำเร็จ กรุณาลองใหม่อีกครั้ง'
-      );
-    }
-
-    setStatus('กำลังขออนุญาตและเปิดกล้อง...');
-
-    reader = new ZXingBrowser.BrowserMultiFormatReader();
-
-    const constraints = selectedDeviceId
-      ? {
-          video:{
-            deviceId:{exact:selectedDeviceId}
-          },
-          audio:false
-        }
-      : {
-          video:{
-            facingMode:{ideal:'environment'}
-          },
-          audio:false
-        };
-
-    controls = await reader.decodeFromConstraints(
-      constraints,
-      video,
-      (result,error)=>{
-        if(result && !locked){
-          locked = true;
-
-          const barcode = result.getText();
-          $('manual').value = barcode;
-
-          setStatus('อ่านบาร์โค้ดได้แล้ว: '+barcode);
-
-          sendBarcode(barcode);
-        }
-      }
-    );
-
-    // ตรวจสอบว่าภาพกล้องเข้าวิดีโอแล้ว
-    await video.play();
-
-    await loadCameraList();
-
-    setStatus('เปิดกล้องสำเร็จ — วางบาร์โค้ดให้อยู่กลางภาพ');
-
+    status('กำลังขออนุญาตและเปิดกล้อง...');
+    if(!scanner) scanner=new Html5Qrcode('reader',{formatsToSupport, verbose:false});
+    const config={fps:12, qrbox:(w,h)=>({width:Math.min(Math.floor(w*.88),520),height:Math.min(Math.floor(h*.38),180)}), aspectRatio:1.777, disableFlip:false};
+    const cameraId=selectEl.value;
+    if(cameraId) await scanner.start(cameraId,config,onScan,()=>{});
+    else await scanner.start({facingMode:'environment'},config,onScan,()=>{});
+    running=true;status('กล้องพร้อมแล้ว วางบาร์โค้ดให้อยู่ในกรอบสีเขียว');
+    await listCameras();
   }catch(e){
-    console.error('Camera error:',e);
-
-    await stopCamera();
-
-    let message = e.message || 'ไม่สามารถเปิดกล้องได้';
-
-    if(e.name === 'NotAllowedError' ||
-       e.name === 'PermissionDeniedError'){
-      message =
-        'ไม่ได้รับอนุญาตใช้กล้อง กรุณาอนุญาต Camera ในการตั้งค่าเว็บไซต์';
-    }
-    else if(e.name === 'NotFoundError'){
-      message = 'ไม่พบกล้องในอุปกรณ์';
-    }
-    else if(e.name === 'NotReadableError'){
-      message =
-        'กล้องอาจกำลังถูกใช้งานโดยแอปอื่น กรุณาปิดแอปอื่นแล้วลองใหม่';
-    }
-    else if(e.name === 'OverconstrainedError'){
-      message =
-        'ไม่สามารถใช้กล้องที่เลือกได้ กรุณาเลือกกล้องอื่น';
-    }
-
-    setStatus('เปิดกล้องไม่สำเร็จ: '+message);
-
-  }finally{
-    starting = false;
-    startButton.disabled = false;
+    running=false;
+    let m=e && (e.message||String(e));
+    if(/permission|denied|notallowed/i.test(m))m='ไม่ได้รับอนุญาตใช้กล้อง กรุณาอนุญาต Camera ในการตั้งค่าเว็บไซต์';
+    else if(/notfound|devicesnotfound/i.test(m))m='ไม่พบกล้องที่ใช้งานได้';
+    else if(/notreadable|trackstart/i.test(m))m='กล้องกำลังถูกใช้งานโดยแอปอื่น กรุณาปิดแอปกล้องแล้วลองใหม่';
+    status('เปิดกล้องไม่สำเร็จ: '+m);
   }
 }
-
-// ปุ่มเปิดกล้อง
-startButton.addEventListener('click',startCamera);
-
-// เปลี่ยนกล้อง
-cameraSelect.addEventListener('change',async()=>{
-  selectedDeviceId = cameraSelect.value;
-  if(selectedDeviceId){
-    await startCamera();
-  }
-});
-
-// ปิดหน้าสแกน
-$('close').addEventListener('click',async()=>{
-  await stopCamera();
-  window.close();
-});
-
-// ส่ง Barcode ด้วยตนเอง
-$('send').addEventListener('click',()=>{
-  sendBarcode($('manual').value);
-});
-
-// ปิดกล้องเมื่อออกจากหน้า
-window.addEventListener('pagehide',()=>{
-  stopCamera();
-});
-
-// เตรียมระบบเมื่อเปิดหน้า แต่ยังไม่เปิดกล้องเอง
-(async()=>{
-  try{
-    setStatus('กำลังโหลดระบบอ่านบาร์โค้ด...');
-
-    await loadZXing();
-
-    if(!validReturnOrigin()){
-      setStatus(
-        'พร้อมทดสอบกล้อง — กดปุ่มเริ่มเปิดกล้อง (โหมดทดสอบ)'
-      );
-    }else{
-      setStatus('ระบบพร้อมแล้ว กดปุ่มเริ่มเพื่อเปิดกล้อง');
-    }
-
-  }catch(e){
-    setStatus(
-      'โหลดระบบอ่านบาร์โค้ดไม่สำเร็จ กรุณาลองโหลดหน้าเว็บใหม่'
-    );
-    console.error(e);
-  }
-})();
-</script>
-</body>
-</html>
+function onScan(decodedText){ if(validCode(decodedText))sendResult(decodedText); }
+async function stopCamera(){
+  if(scanner && running){ try{await scanner.stop();}catch(e){} }
+  running=false;
+}
+document.getElementById('startBtn').addEventListener('click',startCamera);
+document.getElementById('stopBtn').addEventListener('click',()=>{stopCamera();status('หยุดกล้องแล้ว');});
+selectEl.addEventListener('change',async()=>{if(running){await stopCamera();startCamera();}});
+status('แตะปุ่ม “เริ่มกล้อง” เพื่ออนุญาตและเปิดกล้อง');
+window.addEventListener('pagehide',()=>{stopCamera();});
+</script></body></html>
